@@ -32,7 +32,7 @@ app.use(cookieSession({
 }));
 app.use(function (req, res, next) {
     if (req.session.id) {
-        console.log(req.session.id);
+
     } else {
         req.session = {
             "id": '_' + Math.random().toString(36).substr(2, 9),
