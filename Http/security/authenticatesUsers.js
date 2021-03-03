@@ -24,5 +24,4 @@ class AuthenticatesUser {
     }
 }
 
-
 module.exports = AuthenticatesUser;
