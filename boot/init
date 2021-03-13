@@ -3,7 +3,7 @@
 /**
  * Module dependencies.
  */
-const app = require('../app');
+const app = require('../setup');
 const debug = require('debug')('bridge-front-back:server');
 const http = require('http');
 

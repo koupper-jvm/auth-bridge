@@ -2,9 +2,9 @@
   "name": "auth-bridge",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "setup.js",
   "scripts": {
-    "start": "nodemon ./Boot/init"
+    "start": "nodemon boot/init"
   },
   "keywords": [],
   "author": "",

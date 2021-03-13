@@ -9,19 +9,19 @@ const staticsPath = __dirname + '/public/';
 const helmet = require('helmet');
 const Keygrip = require('keygrip')
 
-const app = express();
-app.use(
+const setup = express();
+setup.use(
     helmet({
         contentSecurityPolicy: false,
     })
 );
 
-app.use(cookieParser())
-app.use(csrf({
+setup.use(cookieParser())
+setup.use(csrf({
     cookie: true
 }))
-app.set('trust proxy', 1)
-app.use(cookieSession({
+setup.set('trust proxy', 1)
+setup.use(cookieSession({
     httpOnly: true,
     keys: new Keygrip([], 'SHA384', 'base64'),
     name: 'sessionId',
@@ -30,7 +30,7 @@ app.use(cookieSession({
     maxAge: 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === 'production'
 }));
-app.use(function (req, res, next) {
+setup.use(function (req, res, next) {
     if (req.session.id) {
 
     } else {
@@ -41,19 +41,19 @@ app.use(function (req, res, next) {
     }
     next()
 })
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(express.static(staticsPath));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+setup.use(logger('dev'));
+setup.use(express.json());
+setup.use(express.urlencoded({ extended: false }));
+setup.use(express.static(staticsPath));
+setup.use(bodyParser.json());
+setup.use(bodyParser.urlencoded({ extended: true }));
 
-require('./Http/routers')(app);
+require('./http/routers')(setup);
 
-app.use(function(req, res, next) {
+setup.use(function(req, res, next) {
     next(createError(404));
 });
-app.use(function(err, req, res, next) {
+setup.use(function(err, req, res, next) {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
     res.status(err.status || 500);
@@ -63,4 +63,4 @@ app.use(function(err, req, res, next) {
     });
 });
 
-module.exports = app;
+module.exports = setup;
