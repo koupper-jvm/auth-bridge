@@ -1,7 +1,7 @@
 const credential = require('../../db/models/credentials');
 const { Op } = require("sequelize");
 
-class AuthenticatesUser {
+class User {
     authenticate(user, password, response, callback) {
         credential.findAll({
             where: {
@@ -24,4 +24,4 @@ class AuthenticatesUser {
     }
 }
 
-module.exports = AuthenticatesUser;
+module.exports = User;
