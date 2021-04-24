@@ -1,5 +1,5 @@
-const AuthenticateUser = new (require('../security/authenticatesUsers'))();
-const jwt = require('../security/jwtGenerate')
+const AuthenticateUser = new (require('../security/user-authentication'))();
+const jwt = require('../security/jwt-generator')
 
 module.exports = {
     login(req, res) {

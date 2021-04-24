@@ -1,4 +1,4 @@
-const credential = require('../../db/models/credentials');
+const credential = require('../db/models/credentials');
 const { Op } = require("sequelize");
 
 class AuthenticatesUser {

@@ -1,7 +1,7 @@
 const jwt = require('jwt-simple');
 const moment = require('moment');
 
-module.exports = createToken = (user) => {
+module.exports = (user) => {
     let secret = Buffer.from('NPYnBp1UJM', "hex");
     let payload = {
         userId: user[0].dataValues.id,
