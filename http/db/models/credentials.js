@@ -4,7 +4,6 @@ const sequelize = new Sequelize('dashboard', 'root', 'root', {
   dialect: 'postgres',
 });
 
-
 const Credential = sequelize.define('credential', {
   // Model attributes are defined here
   id: {
