@@ -1,6 +1,7 @@
 const authenticationManagerController = require('../controllers/authentication');
+const userController = require('../controllers/users');
 
 module.exports = (app) => {
     app.post('/login', authenticationManagerController.login);
-    app.post('/signIn', authenticationManagerController.signIn);
+    app.post('/signIn', userController.signIn);
 };
