@@ -5,57 +5,90 @@ const cookieSession = require('cookie-session')
 const csrf = require('csurf')
 const logger = require('morgan');
 const bodyParser = require("body-parser");
-const staticsPath = __dirname + '/public/';
+const staticPath = __dirname + '/public/';
 const helmet = require('helmet');
 const Keygrip = require('keygrip')
+const history = require('connect-history-api-fallback');
+const backend = require('./http');
 
-const setup = express();
-setup.use(
+const app = express();
+app.use(function (req, res, next) {
+    next()
+})
+app.set('trust proxy', 1)
+app.use(cookieSession({
+    httpOnly: true,
+    keys: new Keygrip(['', ''], 'SHA384', 'base64'),
+    name: 'sessionId',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 1000 * 60 * 15,
+    signed: true,
+    secure: process.env.NODE_ENV === 'production'
+}));
+app.use(
     helmet({
         contentSecurityPolicy: false,
     })
 );
 
-setup.use(cookieParser())
-setup.use(csrf({
-    cookie: true
+app.use(cookieParser('NPYnBp1UJM'))
+const csrfCookieValidator = function (req) {
+    return req.session.csrf_token;
+};
+app.use(csrf({
+    cookie: {
+        httpOnly: true,
+        signed: true,
+    },
+    value: csrfCookieValidator,
 }))
-setup.set('trust proxy', 1)
-setup.use(cookieSession({
-    httpOnly: true,
-    keys: new Keygrip([], 'SHA384', 'base64'),
-    name: 'sessionId',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 24 * 60 * 60 * 1000,
-    secure: process.env.NODE_ENV === 'production'
-}));
-setup.use(function (req, res, next) {
-    if (req.session.id) {
+app.use(function (req, res, next) {
+    if (req.session.isAuthenticated && req.path === '/') {
+        return res.redirect(backend.authorization.buildRedirectFor(req, res))
+    }
 
-    } else {
-        req.session = {
-            "id": '_' + Math.random().toString(36).substr(2, 9),
-            "csrf": req.csrfToken()
+    if (backend.authorization.isProtectedPath(req.path)) {
+        if (!req.session.isAuthenticated) {
+            return res.redirect('/?authentication=true')
+        }
+
+        if (!backend.authorization.isAuthorized(req)) {
+            return res.redirect(backend.authorization.buildRedirectFor(req, res));
         }
     }
+
+    if (!req.session.id) {
+        req.session = {
+            "id": '_' + Math.random().toString(36).substr(2, 9),
+            "csrf_token": req.csrfToken()
+        }
+    }
+
     next()
 })
-setup.use(logger('dev'));
-setup.use(express.json());
-setup.use(express.urlencoded({ extended: false }));
-setup.use(express.static(staticsPath));
-setup.use(bodyParser.json());
-setup.use(bodyParser.urlencoded({ extended: true }));
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({extended: false}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 
-require('./http/routers')(setup);
+require('./http')(app);
 
-setup.use(function(req, res, next) {
+app.use(history())
+app.use(express.static(staticPath));
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
     next(createError(404));
 });
-setup.use(function(err, req, res, next) {
+
+// error handler
+app.use(function (err, req, res, next) {
+    // set locals, only providing error in development
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+    // render the error page
     res.status(err.status || 500);
     res.json({
         message: err.message,
@@ -63,4 +96,4 @@ setup.use(function(err, req, res, next) {
     });
 });
 
-module.exports = setup;
+module.exports = app;
