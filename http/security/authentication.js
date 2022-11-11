@@ -1,60 +1,46 @@
-const jwt = require('../index').jwt;
-const User = require('../index').db.User;
-const Role = require('../index').db.Role;
+const {Role, User} = require('../index').db;
+const jwt = require('./jwt-generator');
 
 const login = async (req, res) => {
-    const authorization = require('../index').authorization;
-
-    const paths = require('../routes/app').paths;
-
-    try {
-        const result = await User.findOne({
-            where: {
-                email: req.body.email
-            },
-            include: Role
-        });
-
-        if (!result) {
-            throw new Error("UNREGISTERED_USER");
-        }
-
-        if (!User.validPassword(req.body.password, result.password)) {
-            throw new Error("INCORRECT_PASSWORD");
-        }
-
-        req.session.isAuthenticated = true;
-        res.cookie('access_token', await jwt.create(result), {
-            maxAge: 1000 * 60 * 15
-        });
-
-        const roles = await result.getRoles();
-
-        const userRoles = [];
-
-        roles.forEach(element => {
-            userRoles.push({
-                name: element.name.toLowerCase(),
-                home: paths['protected'][element.name.toLowerCase()].defaultPath,
+    let login = async (email, password) => {
+        try {
+            const result = await User.findOne({
+                where: {
+                    email: email,
+                },
+                include: Role,
             });
-        });
 
-        res.json({
-            profileInfo: {
-                userName: result.username,
-                profiles: userRoles,
-            },
-            redirect: authorization.buildRedirectFor(req, res)
-        })
-    } catch (error) {
-        return res.status(500).json({error: error.message})
-    }
+            if (!result) {
+                return res.status(404).json({
+                    message: "USER_NOT_FOUND",
+                });
+            }
+
+            if (!User.validPassword(password, result.password)) {
+                return res.status(401).json({
+                    message: "WRONG_PASSWORD",
+                });
+            }
+
+            let token = await jwt.createFromSignedUser(result)
+
+            res.status(200).json({
+                profileInfo: {
+                    email: result.email,
+                    userName: result.username,
+                },
+                at: token,
+            });
+
+        } catch (e) {
+            res.status(503).json({
+                message: "AN_ERROR_FOUND",
+            });
+        }
+    };
+
+    return login(req.body.user, req.body.password);
 }
 
-const logout = (req, res) => {
-    req.session = null;
-
-    res.redirect('/')
-}
-
-module.exports = {login, logout};
+module.exports = {login}
